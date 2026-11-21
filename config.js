@@ -12,6 +12,7 @@ export const CONFIG = {
   //   videos: YouTube video ID'leri (youtube.com/watch?v=BURASI)
   //   playlistId: YouTube oynatma listesi ID'si (youtube.com/playlist?list=BURASI)
   lists: [
+    { title: 'Gözlük listem', playlistId: 'PLTbMbPPqOe2g' },
     {
       title: 'Örnek videolar',
       videos: ['aqz-KE-bpKQ', 'eRsGyueVLvQ', 'R6MlUcmOul8', 'WhWc3b3KhnY', 'jNQXAC9IVRw'],
