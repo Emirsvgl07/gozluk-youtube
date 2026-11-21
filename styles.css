@@ -1,0 +1,170 @@
+/* Additive ekran: siyah = ışık yok = şeffaf. Geniş parlak yüzeylerden kaçın. */
+:root {
+  color-scheme: dark;
+  --fg: #ffffff;
+  --dim: #a8a8a8;
+  --accent: #4fd1ff;
+  --surface: #161616;
+  --surface-focus: #0f2f3a;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #000;
+  color: var(--fg);
+  font: 24px/1.3 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+/* Meta özel arayüz sözleşmesi: kök tam 600x600. */
+#root {
+  position: relative;
+  width: 600px;
+  height: 600px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status { margin: 0; color: var(--dim); }
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px;
+  scrollbar-width: none;
+}
+.scroll::-webkit-scrollbar { display: none; }
+
+button, input {
+  font: inherit;
+  color: var(--fg);
+  background: var(--surface);
+  border: 3px solid transparent;
+  border-radius: 16px;
+}
+
+button {
+  padding: 14px 18px;
+  text-align: left;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+input {
+  width: 100%;
+  padding: 14px 18px;
+  flex-shrink: 0;
+}
+input::placeholder { color: var(--dim); }
+
+button:focus, input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface-focus);
+}
+
+.note { margin: 8px 4px 0; font-size: 18px; color: var(--dim); }
+
+/* Video satırı */
+.vrow {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 8px;
+}
+.vrow img {
+  width: 120px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #222;
+}
+.vrow .t {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 21px;
+}
+.vrow .c { display: block; font-size: 17px; color: var(--dim); margin-top: 2px; }
+
+/* Oynatıcı */
+.video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  flex-shrink: 0;
+}
+.video iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  pointer-events: none; /* odak bizim düğmelerde kalsın */
+}
+
+.meta { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.vtitle {
+  margin: 0;
+  font-size: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.prog { display: flex; align-items: center; gap: 12px; }
+.bar { flex: 1; height: 6px; background: #2a2a2a; border-radius: 3px; overflow: hidden; }
+.fill { height: 100%; width: 0; background: var(--accent); }
+.time { font-size: 17px; color: var(--dim); font-variant-numeric: tabular-nums; }
+
+.rail { display: flex; gap: 10px; margin-top: auto; }
+.ctl {
+  flex: 1;
+  min-height: 64px;
+  padding: 0;
+  text-align: center;
+  font-size: 24px;
+}
+
+.toast {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 8px 18px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.85);
+  font-size: 20px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.toast.on { opacity: 1; }
