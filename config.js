@@ -3,7 +3,7 @@ export const CONFIG = {
   // YouTube Data API v3 anahtarı (isteğe bağlı).
   // Boş bırakırsan arama ve "Trend" kapalı olur; aşağıdaki listeler yine çalışır.
   // Anahtarı Google Cloud Console'da "HTTP referrer" ile kendi sitene kısıtla.
-  apiKey: '',
+  apiKey: 'AIzaSyCt1rnAz7Ase6kjbxVgLhr6FnfaFv0yyt8',
 
   // Trend videolar için ülke kodu.
   region: 'TR',

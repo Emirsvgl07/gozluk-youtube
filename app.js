@@ -291,7 +291,7 @@ function renderHome(state, signal) {
         status.textContent = items.length ? '' : 'Liste boş. Telefondan video ekle.';
         draw(items);
         // Kullanıcı henüz gezinmediyse odağı listenin başına (veya geri dönülen videoya) al.
-        if (!touched) focusInitial(body, state.focus);
+        if (!touched) homeFocus();
       })
       .catch((err) => {
         if (signal.aborted) return;
@@ -299,35 +299,46 @@ function renderHome(state, signal) {
       });
   }
 
+  // Açılışta odak: geri dönülen öğe, yoksa listedeki ilk video, yoksa ilk düğme.
+  function homeFocus() {
+    if (state.focus) focusInitial(body, state.focus);
+    else focusInitial(videosBox.firstChild ? videosBox : body);
+  }
+
+  if (hasKey) body.append(searchBox());
   body.append(videosBox, status);
   buildExtras(extras, main);
   if (extras.childElementCount) body.append(h('p', { class: 'section' }, 'Diğer'), extras);
   if (!hasKey) {
     body.append(h('p', { class: 'note' }, 'Arama için config.js dosyasına YouTube API anahtarı ekle.'));
   }
-  focusInitial(body, state.focus);
+  homeFocus();
   return () => document.removeEventListener('keydown', onTouch);
+}
+
+// Arama kutusu: gözlükte seçilince el yazısı/sesle yazma ekranı açılır.
+function searchBox() {
+  const input = h('input', {
+    type: 'search',
+    placeholder: '🔍 Ara (yaz veya söyle)',
+    'aria-label': "YouTube'da ara",
+    enterkeyhint: 'search',
+    dataset: { key: 'search' },
+  });
+  let last = '';
+  const submit = () => {
+    const q = input.value.trim();
+    if (!q || q === last) return;
+    last = q;
+    go({ screen: 'list', kind: 'search', q, title: `“${q}”` });
+  };
+  input.addEventListener('change', submit);
+  return h('form', { role: 'search', onSubmit: (e) => { e.preventDefault(); submit(); } }, input);
 }
 
 function buildExtras(body, main) {
   if (hasKey) {
-    const input = h('input', {
-      type: 'search',
-      placeholder: '🔍 Ara (yaz veya söyle)',
-      'aria-label': "YouTube'da ara",
-      enterkeyhint: 'search',
-      dataset: { key: 'search' },
-    });
-    let last = '';
-    const submit = () => {
-      const q = input.value.trim();
-      if (!q || q === last) return;
-      last = q;
-      go({ screen: 'list', kind: 'search', q, title: `“${q}”` });
-    };
-    input.addEventListener('change', submit);
     body.append(
-      h('form', { role: 'search', onSubmit: (e) => { e.preventDefault(); submit(); } }, input),
       menuButton("🔥 Türkiye'de trend", 'trend', () =>
         go({ screen: 'list', kind: 'trend', title: 'Trend' }),
       ),
