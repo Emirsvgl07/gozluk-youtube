@@ -1,7 +1,8 @@
 // Gözlük YouTube: Meta Ray-Ban Display için YouTube web uygulaması.
 // Giriş modeli: yön tuşları (Neural Band kaydırma) odak taşır, Enter (pinch) seçer,
 // Escape / sistem Geri bir önceki ekrana döner.
-import { CONFIG } from './config.js';
+// Ayarlar her açılışta taze yüklenir; GitHub Pages önbelleği (10 dk) yeni listeleri geciktirmez.
+const { CONFIG } = await import(`./config.js?t=${Date.now()}`);
 
 const root = document.getElementById('root');
 const hasKey = Boolean(CONFIG.apiKey && CONFIG.apiKey.trim());
