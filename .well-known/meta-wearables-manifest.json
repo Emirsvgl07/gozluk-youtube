@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "name": "YouTube",
+  "description": "Gözlükte YouTube: listem, arama ve trendler.",
+  "appearance": {
+    "theme_color": "#FF0033",
+    "icon": {
+      "src": "../icon.svg",
+      "type": "monochrome"
+    }
+  }
+}
