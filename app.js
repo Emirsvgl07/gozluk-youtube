@@ -67,7 +67,7 @@ function focusInitial(container, key) {
   el?.focus();
 }
 
-const thumb = (id) => `https://i.ytimg.com/vi/${encodeURIComponent(id)}/default.jpg`;
+const thumb = (id) => `https://i.ytimg.com/vi/${encodeURIComponent(id)}/mqdefault.jpg`;
 
 // ---------- Veri ----------
 
@@ -233,9 +233,83 @@ function menuButton(label, key, onClick) {
   return h('button', { dataset: { key }, onClick }, label);
 }
 
-function renderHome(state) {
-  const body = h('div', { class: 'scroll' });
+function logo() {
+  const span = h('span', { class: 'logo', 'aria-hidden': 'true' });
+  span.innerHTML =
+    '<svg viewBox="0 0 28 20" width="46" height="33"><rect width="28" height="20" rx="6" fill="#ff0033"/><path d="M11 5.5 19.5 10 11 14.5Z" fill="#fff"/></svg>';
+  return span;
+}
 
+// Ana liste: config'deki ilk oynatma listesi. Videoları önce önbellekten hemen
+// gösterir, sonra arka planda YouTube'dan tazeler.
+function renderHome(state, signal) {
+  const main = CONFIG.lists.find((l) => l.playlistId);
+  const body = h('div', { class: 'scroll' });
+  const videosBox = h('div', { class: 'vlist' });
+  const status = h('p', { class: 'status', role: 'status' });
+  const extras = h('div', { class: 'vlist' });
+  let touched = false;
+  const onTouch = () => {
+    touched = true;
+  };
+  document.addEventListener('keydown', onTouch, { once: true });
+
+  root.append(
+    h(
+      'header',
+      { class: 'brand' },
+      logo(),
+      h('span', { class: 'brand-name' }, 'YouTube'),
+      main && h('span', { class: 'brand-sub' }, main.title),
+    ),
+    body,
+  );
+
+  if (main) {
+    const cacheKey = `yt-pl-${main.playlistId}`;
+    const draw = (items) => {
+      const activeKey = videosBox.contains(document.activeElement)
+        ? document.activeElement.dataset.key
+        : null;
+      const ids = items.map((x) => x.id);
+      videosBox.replaceChildren(
+        ...items.map((v, i) =>
+          videoRow(v, `pv${i}`, () => go({ screen: 'player', ids, index: i, title: v.title })),
+        ),
+      );
+      if (activeKey) focusInitial(videosBox, activeKey);
+    };
+    const cached = store.get(cacheKey, []);
+    if (cached.length) draw(cached);
+    else status.textContent = 'Liste yükleniyor…';
+
+    playlistIds(main.playlistId, signal)
+      .then((ids) => videoInfo(ids.slice(0, 50), signal))
+      .then((items) => {
+        if (signal.aborted) return;
+        store.set(cacheKey, items);
+        status.textContent = items.length ? '' : 'Liste boş. Telefondan video ekle.';
+        draw(items);
+        // Kullanıcı henüz gezinmediyse odağı listenin başına (veya geri dönülen videoya) al.
+        if (!touched) focusInitial(body, state.focus);
+      })
+      .catch((err) => {
+        if (signal.aborted) return;
+        if (!cached.length) status.textContent = `Liste yüklenemedi: ${err.message}`;
+      });
+  }
+
+  body.append(videosBox, status);
+  buildExtras(extras, main);
+  if (extras.childElementCount) body.append(h('p', { class: 'section' }, 'Diğer'), extras);
+  if (!hasKey) {
+    body.append(h('p', { class: 'note' }, 'Arama için config.js dosyasına YouTube API anahtarı ekle.'));
+  }
+  focusInitial(body, state.focus);
+  return () => document.removeEventListener('keydown', onTouch);
+}
+
+function buildExtras(body, main) {
   if (hasKey) {
     const input = h('input', {
       type: 'search',
@@ -270,6 +344,7 @@ function renderHome(state) {
 
   CONFIG.lists.forEach((l, i) => {
     const key = `list${i}`;
+    if (l === main) return;
     if (l.playlistId) {
       body.append(
         menuButton(`▶︎ ${l.title}`, key, () =>
@@ -284,20 +359,61 @@ function renderHome(state) {
       );
     }
   });
+}
 
-  if (!hasKey) {
-    body.append(h('p', { class: 'note' }, 'Arama için config.js dosyasına YouTube API anahtarı ekle.'));
-  }
-
-  root.append(h('h1', {}, 'YouTube'), body);
-  focusInitial(body, state.focus);
+// Oynatma listesindeki video ID'lerini anahtarsız öğren: görünmez küçük bir
+// YouTube oynatıcısına listeyi yükle, getPlaylist() ile oku, sonra kapat.
+function playlistIds(listId, signal) {
+  return loadYouTubeApi().then(
+    (YT) =>
+      new Promise((resolve, reject) => {
+        const holder = h('div', { class: 'probe', 'aria-hidden': 'true' }, h('div'));
+        document.body.append(holder);
+        let p = null;
+        let done = false;
+        const finish = (ids, err) => {
+          if (done) return;
+          done = true;
+          clearTimeout(timeout);
+          signal.removeEventListener('abort', onAbort);
+          try {
+            p?.destroy();
+          } catch {
+            /* zaten kapalı */
+          }
+          holder.remove();
+          if (ids) resolve(ids);
+          else reject(err);
+        };
+        const onAbort = () => finish(null, new DOMException('İptal', 'AbortError'));
+        const timeout = setTimeout(() => finish(null, new Error('zaman aşımı')), 20000);
+        signal.addEventListener('abort', onAbort);
+        p = new YT.Player(holder.firstChild, {
+          host: 'https://www.youtube-nocookie.com',
+          width: 2,
+          height: 2,
+          playerVars: { autoplay: 0, controls: 0, origin: location.origin },
+          events: {
+            onReady: (e) => {
+              e.target.getIframe().tabIndex = -1;
+              e.target.cuePlaylist({ list: listId, listType: 'playlist', index: 0 });
+            },
+            onStateChange: (e) => {
+              const ids = e.target.getPlaylist?.();
+              if (ids?.length) finish(ids);
+            },
+            onError: () => finish(null, new Error('liste açılamadı')),
+          },
+        });
+      }),
+  );
 }
 
 function videoRow(v, key, onClick) {
   return h(
     'button',
     { class: 'vrow', dataset: { key }, onClick, 'aria-label': `${v.title}, ${v.channel}` },
-    h('img', { src: thumb(v.id), alt: '', width: 120, height: 90, loading: 'lazy' }),
+    h('img', { src: thumb(v.id), alt: '', width: 160, height: 90, loading: 'lazy' }),
     h('span', {}, h('span', { class: 't' }, v.title), h('span', { class: 'c' }, v.channel)),
   );
 }

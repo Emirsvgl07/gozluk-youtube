@@ -90,16 +90,51 @@ button:focus, input:focus {
 
 .note { margin: 8px 4px 0; font-size: 18px; color: var(--dim); }
 
+/* Ana ekran başlığı */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+.logo { display: flex; }
+.brand-name { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+.brand-sub {
+  margin-left: auto;
+  font-size: 18px;
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.vlist { display: flex; flex-direction: column; gap: 10px; }
+.vlist:empty { display: none; }
+.section { margin: 10px 4px 0; font-size: 18px; color: var(--dim); }
+.status:empty { display: none; }
+
+/* Listeyi okumak için kullanılan görünmez oynatıcı */
+.probe {
+  position: fixed;
+  left: -20px;
+  top: -20px;
+  width: 2px;
+  height: 2px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Video satırı */
 .vrow {
   display: grid;
-  grid-template-columns: 120px 1fr;
+  grid-template-columns: 160px 1fr;
   gap: 14px;
   align-items: center;
   padding: 8px;
 }
 .vrow img {
-  width: 120px;
+  width: 160px;
   height: 90px;
   object-fit: cover;
   border-radius: 8px;
